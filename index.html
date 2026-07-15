@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小艺 Claw 部署页面</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #fff;
+        }
+        .card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 480px;
+            text-align: center;
+        }
+        h1 { font-size: 28px; margin-bottom: 8px; }
+        p { color: rgba(255,255,255,0.6); line-height: 1.6; }
+        .status {
+            display: inline-block;
+            margin-top: 24px;
+            padding: 8px 20px;
+            background: rgba(0, 200, 83, 0.2);
+            border: 1px solid rgba(0, 200, 83, 0.4);
+            border-radius: 100px;
+            color: #00c853;
+            font-size: 14px;
+        }
+        .time {
+            margin-top: 16px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>✨ 小艺 Claw</h1>
+        <p>静态页面已成功部署<br>这是通过小艺 Claw 部署上线的</p>
+        <div class="status">● 运行中</div>
+        <div class="time" id="time"></div>
+    </div>
+    <script>
+        document.getElementById('time').textContent = '部署时间: ' + new Date().toLocaleString('zh-CN', {timeZone:'Asia/Shanghai'});
+    </script>
+</body>
+</html>
