@@ -7,20 +7,20 @@ export const FLOOR_GAP = 3.4;      // 层间高度
 export const DOOR_W_CELLS = 2;     // 门洞宽（格数，2 格 = 1 米）
 export const DOOR_H = 2.1;         // 门洞高
 
-// 家具低饱和色板（矢量简约风）
+// 家具动漫色板（高饱和糖果色）
 export const PALETTE = [
-  '#9fb5a6', // 鼠尾草绿
-  '#a3b4c4', // 雾蓝
-  '#d8c6ab', // 沙色
-  '#c99f88', // 陶土
-  '#8f9aa4', // 石板灰
-  '#e0d9cc', // 亚麻白
-  '#b28b84', // 玫瑰棕
-  '#7d8a76', // 苔绿
+  '#ff8fab', // 樱花粉
+  '#7ec8f7', // 天空蓝
+  '#ffd166', // 阳光黄
+  '#8fdd88', // 嫩芽绿
+  '#c3a6ff', // 薰衣草紫
+  '#ffb377', // 蜜橘橙
+  '#7fe0d4', // 薄荷青
+  '#ff7b9c', // 玫红
 ];
-// 房间地板色板
+// 房间地板色板（明快粉彩）
 export const FLOOR_PALETTE = [
-  '#d9cfbc', '#cfd6cd', '#c9d0d8', '#d8c9bd', '#cec4ce', '#dcd7c8',
+  '#f6d9ae', '#c9ecc4', '#bcdcf5', '#f9cfc4', '#e5d1f5', '#fff0bd',
 ];
 
 export const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
