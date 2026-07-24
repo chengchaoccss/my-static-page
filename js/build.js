@@ -22,6 +22,7 @@ export class BuildMode {
     this.selHelper = new THREE.Group();
     this.sm.scene.add(this.selHelper);
     this._camAnim = null;
+    this.touches = new Map();   // 触屏多指手势
     this._bind();
   }
 
@@ -158,7 +159,57 @@ export class BuildMode {
     window.addEventListener('keydown', e => this.enabled && this.onKey(e));
   }
 
+  // ---------- 双指手势：平移 / 捏合缩放 / 旋转 ----------
+  gestureState() {
+    const pts = [...this.touches.values()];
+    const cx = (pts[0].x + pts[1].x) / 2, cy = (pts[0].y + pts[1].y) / 2;
+    const dx = pts[1].x - pts[0].x, dy = pts[1].y - pts[0].y;
+    return { cx, cy, dist: Math.hypot(dx, dy), ang: Math.atan2(dy, dx) };
+  }
+
+  onTouchDown(e) {
+    this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (this.touches.size === 2) {
+      // 进入手势模式：取消进行中的单指操作
+      this.drag = null; this.roomDraft = null; this.selHelper.clear();
+      if (this.ghost) this.ghost.visible = false;
+      this.gesture = this.gestureState();
+      return true;
+    }
+    return false;
+  }
+
+  onTouchMove(e) {
+    if (!this.touches.has(e.pointerId)) return false;
+    this.touches.get(e.pointerId).x = e.clientX;
+    this.touches.get(e.pointerId).y = e.clientY;
+    if (this.touches.size < 2 || !this.gesture) return this.touches.size >= 2;
+    const g = this.gestureState(), prev = this.gesture;
+    // 捏合缩放
+    if (prev.dist > 10) {
+      this.orbit.dist = THREE.MathUtils.clamp(this.orbit.dist * prev.dist / Math.max(10, g.dist), 4, 90);
+    }
+    // 双指旋转（拧转）
+    let da = g.ang - prev.ang;
+    if (da > Math.PI) da -= Math.PI * 2; if (da < -Math.PI) da += Math.PI * 2;
+    this.orbit.theta += da;
+    // 双指平移
+    const s = this.orbit.dist * 0.0016;
+    const dx = g.cx - prev.cx, dy = g.cy - prev.cy;
+    const cos = Math.cos(this.orbit.theta), sin = Math.sin(this.orbit.theta);
+    this.orbit.tx += (dx * sin - dy * cos) * s * -1;
+    this.orbit.tz += (-dx * cos - dy * sin) * s * -1;
+    this.gesture = g;
+    return true;
+  }
+
+  onTouchUp(e) {
+    this.touches.delete(e.pointerId);
+    if (this.touches.size < 2) this.gesture = null;
+  }
+
   onDown(e) {
+    if (e.pointerType === 'touch' && this.onTouchDown(e)) return;
     const ndc = this._ndc(e);
     if (e.button === 2 || e.button === 1) {
       // 右键/中键：旋转或平移视角；家具放置时右键退出工具
@@ -201,6 +252,7 @@ export class BuildMode {
   }
 
   onMove(e) {
+    if (e.pointerType === 'touch' && this.onTouchMove(e)) return;
     const ndc = this._ndc(e);
     if (this.drag) {
       const dx = e.clientX - this.drag.x, dy = e.clientY - this.drag.y;
@@ -251,6 +303,7 @@ export class BuildMode {
   }
 
   onUp(e) {
+    if (e.pointerType === 'touch') this.onTouchUp(e);
     if (this.drag) {
       if (this.drag.kind === 'move' && this.drag.moved) this.app.commitTransform();
       this.drag = null;

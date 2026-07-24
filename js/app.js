@@ -19,6 +19,10 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '
 
 class App {
   constructor() {
+    // APK 内嵌 / 触屏模式
+    if (new URLSearchParams(location.search).has('app') || matchMedia('(pointer: coarse)').matches) {
+      document.body.classList.add('app-mode');
+    }
     this.store = loadStore();
     this.palace = null;
     this.mode = 'build';
@@ -34,6 +38,10 @@ class App {
     this._saveTimer = null;
     this.thumbCache = new Map();
     this.bindGlobal();
+    if (matchMedia('(pointer: coarse)').matches) {
+      const keys = document.querySelector('#tour-start-overlay .keys');
+      if (keys) keys.innerHTML = '<span>左下摇杆 行走</span><span>拖动屏幕 转视角</span><span>右下按钮 查看 / 上下楼</span>';
+    }
     this.renderHome();
   }
 
@@ -678,6 +686,12 @@ class App {
 
   // ================= 巡游 HUD =================
   showTourOverlay(v) { $('#tour-start-overlay').classList.toggle('hidden', !v); }
+  setTouchHud(v) { $('#touch-hud').classList.toggle('hidden', !v); if (!v) $('#touch-action').classList.add('hidden'); }
+  setTouchAction(icon) {
+    const b = $('#touch-action');
+    if (!icon) { b.classList.add('hidden'); return; }
+    b.textContent = icon; b.classList.remove('hidden');
+  }
   setTourPrompt(html) {
     const p = $('#tour-prompt');
     if (!html) { p.classList.add('hidden'); return; }

@@ -28,7 +28,13 @@ export class TourMode {
     this.dwellSec = 4;
     this.playing = false;
     this.quizStats = null;
+    this.touchMode = matchMedia('(pointer: coarse)').matches;
+    this.touchWalking = false;
+    this.joy = { x: 0, y: 0 };
+    this._look = null;
+    this._stair = null;
     this._bind();
+    if (this.touchMode) this._bindTouch();
   }
 
   get palace() { return this.app.palace; }
@@ -50,9 +56,11 @@ export class TourMode {
   disable() {
     this.enabled = false;
     this.playing = false;
+    this.touchWalking = false;
     this.phase = 'idle';
     this.app.hideCard();
     this.app.setTourPrompt(null);
+    this.app.setTouchHud(false);
     if (document.pointerLockElement) document.exitPointerLock();
   }
 
@@ -104,7 +112,12 @@ export class TourMode {
 
   beginWalk() {
     this.app.showTourOverlay(false);
-    this.canvas.requestPointerLock();
+    if (this.touchMode) {
+      this.touchWalking = true;
+      this.app.setTouchHud(true);
+    } else {
+      this.canvas.requestPointerLock();
+    }
   }
 
   interact() {
@@ -115,15 +128,68 @@ export class TourMode {
     this.app.showCard(locus, { mode: 'view' });
   }
 
+  useStair() {
+    if (!this._stair) return;
+    this.level += this._stair.dir;
+    this.app.toast(`已到 ${this.level + 1}F`);
+  }
+
+  // ---------- 触屏：虚拟摇杆 + 拖动视角 ----------
+  _bindTouch() {
+    const base = document.getElementById('joy-base');
+    const knob = document.getElementById('joy-knob');
+    if (base && knob) {
+      let joyId = null;
+      const setKnob = (dx, dy) => { knob.style.transform = `translate(${dx}px, ${dy}px)`; };
+      const onJoy = e => {
+        const r = base.getBoundingClientRect();
+        let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+        const max = r.width / 2 - 14, len = Math.hypot(dx, dy);
+        if (len > max) { dx *= max / len; dy *= max / len; }
+        setKnob(dx, dy);
+        this.joy.x = dx / max; this.joy.y = -dy / max;
+      };
+      base.addEventListener('pointerdown', e => {
+        joyId = e.pointerId; base.setPointerCapture(e.pointerId); onJoy(e); e.preventDefault();
+      });
+      base.addEventListener('pointermove', e => { if (e.pointerId === joyId) onJoy(e); });
+      const end = e => {
+        if (e.pointerId !== joyId) return;
+        joyId = null; this.joy.x = 0; this.joy.y = 0; setKnob(0, 0);
+      };
+      base.addEventListener('pointerup', end);
+      base.addEventListener('pointercancel', end);
+    }
+    // 画布拖动 = 转视角
+    this.canvas.addEventListener('pointerdown', e => {
+      if (!this.enabled || this.sub !== 'walk' || !this.touchWalking || e.pointerType !== 'touch') return;
+      this._look = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    });
+    this.canvas.addEventListener('pointermove', e => {
+      if (!this._look || e.pointerId !== this._look.id) return;
+      this.yaw -= (e.clientX - this._look.x) * 0.005;
+      this.pitch = THREE.MathUtils.clamp(this.pitch - (e.clientY - this._look.y) * 0.005, -1.35, 1.35);
+      this._look.x = e.clientX; this._look.y = e.clientY;
+    });
+    const lookEnd = e => { if (this._look && e.pointerId === this._look.id) this._look = null; };
+    this.canvas.addEventListener('pointerup', lookEnd);
+    this.canvas.addEventListener('pointercancel', lookEnd);
+    const act = document.getElementById('touch-action');
+    if (act) act.addEventListener('click', () => {
+      if (this._stair) this.useStair();
+      else if (this.nearLocus) this.interact();
+    });
+  }
+
   // ---------- 步行更新 ----------
   walkUpdate(dt) {
-    let fx = 0, fz = 0;
+    let fx = this.joy.x, fz = this.joy.y;
     if (this.keys.KeyW || this.keys.ArrowUp) fz += 1;
     if (this.keys.KeyS || this.keys.ArrowDown) fz -= 1;
     if (this.keys.KeyA || this.keys.ArrowLeft) fx -= 1;
     if (this.keys.KeyD || this.keys.ArrowRight) fx += 1;
     if (fx || fz) {
-      const len = Math.hypot(fx, fz); fx /= len; fz /= len;
+      const len = Math.max(1, Math.hypot(fx, fz)); fx /= len; fz /= len;
       const sin = Math.sin(this.yaw), cos = Math.cos(this.yaw);
       const dx = (fz * -sin + fx * cos) * SPEED * dt;
       const dz = (fz * -cos + fx * -sin) * SPEED * dt;
@@ -131,23 +197,22 @@ export class TourMode {
     }
     // 楼梯与桩点感知
     const stair = this.stairAt();
+    this._stair = stair;
     let prompt = null;
     this.nearLocus = this.findNearLocus();
+    const touch = this.touchMode;
     if (this.nearLocus) {
       const locus = this.palace.loci.find(l => l.id === this.nearLocus);
       const order = this.palace.path.indexOf(this.nearLocus);
-      prompt = `桩点 ${order >= 0 ? order + 1 : ''} · ${locus.title || '（空）'} — 按 <b>E</b> 查看`;
+      prompt = `桩点 ${order >= 0 ? order + 1 : ''} · ${locus.title || '（空）'}${touch ? '' : ' — 按 <b>E</b> 查看'}`;
       this.highlight(this.nearLocus);
     } else this.highlight(null);
     if (stair) {
-      prompt = stair.dir > 0 ? '按 <b>E</b> 上楼' : '按 <b>E</b> 下楼';
-      if (this.keys.KeyE) {
-        this.keys.KeyE = false;
-        this.level += stair.dir;
-        this.app.toast(`已到 ${this.level + 1}F`);
-      }
+      prompt = touch ? null : (stair.dir > 0 ? '按 <b>E</b> 上楼' : '按 <b>E</b> 下楼');
+      if (this.keys.KeyE) { this.keys.KeyE = false; this.useStair(); }
     }
     this.app.setTourPrompt(prompt);
+    if (touch) this.app.setTouchAction(stair ? (stair.dir > 0 ? '⬆️' : '⬇️') : this.nearLocus ? '👁️' : null);
     this.applyWalkCamera();
   }
 
@@ -328,7 +393,7 @@ export class TourMode {
 
   update(dt) {
     if (!this.enabled) return;
-    if (this.sub === 'walk') { if (this.locked) this.walkUpdate(dt); }
+    if (this.sub === 'walk') { if (this.locked || this.touchWalking) this.walkUpdate(dt); }
     else this.seqUpdate(dt);
   }
 }
