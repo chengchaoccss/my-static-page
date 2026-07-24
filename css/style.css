@@ -1,20 +1,20 @@
 /* ============ 记忆宫殿 · 全局样式 ============ */
 :root {
-  --bg: #f7f4ee;
-  --panel: #fffdf9;
-  --panel-2: #f2eee6;
-  --ink: #3b3e36;
-  --muted: #8a8f85;
-  --line: #e6e1d5;
-  --accent: #6f8f7c;
+  --bg: #eaf5ff;
+  --panel: #ffffff;
+  --panel-2: #f2f0fa;
+  --ink: #4a3f5c;
+  --muted: #9a90b2;
+  --line: #e6dff2;
+  --accent: #ff7ba9;
   --accent-ink: #ffffff;
-  --accent-soft: #e4ece7;
-  --amber: #e8a13c;
-  --amber-soft: #faf0dd;
-  --danger: #c0654f;
-  --radius: 14px;
-  --shadow: 0 10px 30px rgba(60, 58, 48, 0.10);
-  --shadow-sm: 0 3px 10px rgba(60, 58, 48, 0.08);
+  --accent-soft: #ffe6f0;
+  --amber: #ffa22e;
+  --amber-soft: #fff1dc;
+  --danger: #ff6b6b;
+  --radius: 16px;
+  --shadow: 0 10px 30px rgba(120, 92, 170, 0.16);
+  --shadow-sm: 0 3px 10px rgba(120, 92, 170, 0.12);
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; }
@@ -30,7 +30,7 @@ body {
 button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
 input, textarea, select { font-family: inherit; font-size: 14px; color: var(--ink); }
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: #d5cfc2; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #cfc2e6; border-radius: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 
 .hidden { display: none !important; }
@@ -42,11 +42,11 @@ input, textarea, select { font-family: inherit; font-size: 14px; color: var(--in
   background: var(--panel); border: 1px solid var(--line);
   transition: all .15s ease; white-space: nowrap;
 }
-.btn:hover { border-color: #cdc6b6; box-shadow: var(--shadow-sm); }
+.btn:hover { border-color: #d3b8e8; box-shadow: var(--shadow-sm); }
 .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-.btn.primary:hover { background: #5f7f6c; }
+.btn.primary:hover { background: #ff5e96; }
 .btn.amber { background: var(--amber); color: #fff; border-color: var(--amber); }
-.btn.amber:hover { background: #d89230; }
+.btn.amber:hover { background: #f29018; }
 .btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
 .btn.ghost:hover { color: var(--ink); background: var(--panel-2); box-shadow: none; }
 .btn.danger { color: var(--danger); }
@@ -81,7 +81,8 @@ input, textarea, select { font-family: inherit; font-size: 14px; color: var(--in
 /* ============ 宫殿列表页 ============ */
 #home {
   position: fixed; inset: 0; overflow-y: auto; background:
-    radial-gradient(1200px 500px at 70% -100px, #ece7db 0%, transparent 60%),
+    radial-gradient(1100px 480px at 75% -120px, #ffd9e8 0%, transparent 60%),
+    radial-gradient(900px 420px at 10% -80px, #cfe9ff 0%, transparent 55%),
     var(--bg);
   z-index: 50;
 }
@@ -100,7 +101,7 @@ input, textarea, select { font-family: inherit; font-size: 14px; color: var(--in
 .palace-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
 .palace-thumb {
   height: 150px; position: relative; overflow: hidden;
-  background: linear-gradient(160deg, #e9e4d8, #dee5df);
+  background: linear-gradient(165deg, #bfe6ff 55%, #a9dc95 55.3%);
   display:flex; align-items:center; justify-content:center;
 }
 .palace-thumb canvas, .palace-thumb img { width: 100%; height: 100%; object-fit: cover; }
@@ -135,7 +136,7 @@ input, textarea, select { font-family: inherit; font-size: 14px; color: var(--in
 }
 #topbar > * { pointer-events: auto; }
 .bar {
-  background: rgba(255, 253, 249, .92); backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, .92); backdrop-filter: blur(10px);
   border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-sm);
   display: flex; align-items: center; padding: 6px;  gap: 6px;
 }
@@ -147,7 +148,7 @@ input, textarea, select { font-family: inherit; font-size: 14px; color: var(--in
 #floor-bar {
   position: absolute; left: 14px; top: 50%; transform: translateY(-50%); z-index: 10;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
-  background: rgba(255,253,249,.92); backdrop-filter: blur(10px);
+  background: rgba(255,255,255,.92); backdrop-filter: blur(10px);
   border: 1px solid var(--line); border-radius: 12px; padding: 8px 6px; box-shadow: var(--shadow-sm);
 }
 #floor-bar .flabel { font-size: 11px; color: var(--muted); writing-mode: vertical-lr; letter-spacing: 3px; padding: 4px 0; }
@@ -164,7 +165,7 @@ input, textarea, select { font-family: inherit; font-size: 14px; color: var(--in
 /* 左侧工具/家具面板 */
 #left-panel {
   position: absolute; left: 74px; top: 78px; bottom: 70px; width: 248px; z-index: 9;
-  background: rgba(255,253,249,.94); backdrop-filter: blur(10px);
+  background: rgba(255,255,255,.94); backdrop-filter: blur(10px);
   border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm);
   display: flex; flex-direction: column; overflow: hidden;
 }
@@ -178,7 +179,7 @@ input, textarea, select { font-family: inherit; font-size: 14px; color: var(--in
   border: 1px solid var(--line); background: #fff; text-align: left; font-size: 13.5px;
   transition: all .12s;
 }
-.tool-item:hover { border-color: #cdc6b6; }
+.tool-item:hover { border-color: #d3b8e8; }
 .tool-item.active { border-color: var(--accent); background: var(--accent-soft); }
 .tool-item .t-ico { font-size: 17px; width: 22px; text-align: center; }
 .tool-item .t-sub { display: block; font-size: 11px; color: var(--muted); }
@@ -191,14 +192,14 @@ input, textarea, select { font-family: inherit; font-size: 14px; color: var(--in
 }
 .furn-item .f-ico { font-size: 21px; line-height: 1.2; }
 .furn-item .f-name { font-size: 11px; color: var(--muted); }
-.furn-item:hover { border-color: #cdc6b6; transform: translateY(-1px); }
+.furn-item:hover { border-color: #d3b8e8; transform: translateY(-2px) rotate(-1.5deg); }
 .furn-item.active { border-color: var(--accent); background: var(--accent-soft); }
 .furn-item.active .f-name { color: var(--accent); }
 
 /* 右侧属性面板 */
 #right-panel {
   position: absolute; right: 14px; top: 78px; bottom: 70px; width: 292px; z-index: 9;
-  background: rgba(255,253,249,.94); backdrop-filter: blur(10px);
+  background: rgba(255,255,255,.94); backdrop-filter: blur(10px);
   border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm);
   display: flex; flex-direction: column; overflow: hidden;
 }
@@ -226,9 +227,9 @@ input, textarea, select { font-family: inherit; font-size: 14px; color: var(--in
   min-width: 24px; height: 24px; border-radius: 50%; background: var(--amber); color: #fff;
   display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;
 }
-.locus-num.st-empty { background: #b5b9b0; }
-.locus-num.st-fuzzy { background: #d9b23c; }
-.locus-num.st-known { background: var(--accent); }
+.locus-num.st-empty { background: #b8bcc8; }
+.locus-num.st-fuzzy { background: #ffd23e; }
+.locus-num.st-known { background: #57cc8a; }
 .locus-row .l-title { flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .locus-row .l-sub { font-size: 11px; color: var(--muted); }
 .locus-row .l-ops { display: flex; }
@@ -236,7 +237,7 @@ input, textarea, select { font-family: inherit; font-size: 14px; color: var(--in
 /* 底部提示栏 */
 #hintbar {
   position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 9;
-  background: rgba(59, 62, 54, .85); color: #f5f3ec; backdrop-filter: blur(8px);
+  background: rgba(74, 63, 92, .88); color: #fff5fb; backdrop-filter: blur(8px);
   padding: 8px 20px; border-radius: 99px; font-size: 13px; box-shadow: var(--shadow-sm);
   max-width: 80vw; text-align: center; pointer-events: none; white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis;
@@ -250,7 +251,7 @@ input, textarea, select { font-family: inherit; font-size: 14px; color: var(--in
 #crosshair {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 8;
   width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.85);
-  box-shadow: 0 0 0 2px rgba(59,62,54,.35); pointer-events: none;
+  box-shadow: 0 0 0 2px rgba(74,63,92,.4); pointer-events: none;
 }
 #tour-hud {
   position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 10;
@@ -258,13 +259,13 @@ input, textarea, select { font-family: inherit; font-size: 14px; color: var(--in
 }
 #tour-hud > * { pointer-events: auto; }
 #tour-prompt {
-  background: rgba(59,62,54,.85); color: #f5f3ec; padding: 8px 18px; border-radius: 99px;
+  background: rgba(74,63,92,.88); color: #fff5fb; padding: 8px 18px; border-radius: 99px;
   font-size: 13px; backdrop-filter: blur(8px);
 }
 #tour-controls { display: flex; align-items: center; gap: 8px; }
 #tour-start-overlay {
   position: absolute; inset: 0; z-index: 9; display: flex; align-items: center; justify-content: center;
-  background: rgba(45, 47, 41, .45); backdrop-filter: blur(3px);
+  background: rgba(88, 70, 120, .38); backdrop-filter: blur(3px);
 }
 .overlay-card {
   background: var(--panel); border-radius: 18px; padding: 34px 42px; text-align: center;
@@ -298,7 +299,7 @@ input, textarea, select { font-family: inherit; font-size: 14px; color: var(--in
 #content-card .cc-text { font-size: 14px; white-space: pre-wrap; }
 #content-card .cc-mnemonic {
   margin-top: 14px; background: var(--amber-soft); border-radius: 10px; padding: 10px 13px;
-  font-size: 13px; color: #8a6420;
+  font-size: 13px; color: #b06a12;
 }
 #content-card .cc-mnemonic b { display: block; font-size: 11px; margin-bottom: 3px; opacity: .75; }
 #content-card .cc-foot { padding: 12px 18px 16px; display: flex; gap: 8px; justify-content: flex-end; }
@@ -316,14 +317,14 @@ input, textarea, select { font-family: inherit; font-size: 14px; color: var(--in
 #quiz-grade .g-sub { font-size: 11px; color: var(--muted); }
 #quiz-progress {
   position: absolute; top: 76px; left: 50%; transform: translateX(-50%); z-index: 10;
-  background: rgba(255,253,249,.92); border: 1px solid var(--line); border-radius: 99px;
+  background: rgba(255,255,255,.92); border: 1px solid var(--line); border-radius: 99px;
   padding: 6px 18px; font-size: 13px; box-shadow: var(--shadow-sm);
 }
 #quiz-progress b { color: var(--amber); }
 
 /* ============ 模态框 ============ */
 #modal-mask {
-  position: fixed; inset: 0; z-index: 100; background: rgba(45,47,41,.45);
+  position: fixed; inset: 0; z-index: 100; background: rgba(88,70,120,.38);
   backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center;
 }
 .modal {
@@ -345,16 +346,16 @@ input, textarea, select { font-family: inherit; font-size: 14px; color: var(--in
 .img-drop img { max-width: 100%; max-height: 150px; border-radius: 8px; display: block; margin: 0 auto; }
 .img-drop .img-x {
   position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%;
-  background: rgba(59,62,54,.75); color: #fff; font-size: 12px;
+  background: rgba(74,63,92,.75); color: #fff; font-size: 12px;
 }
 
 /* toast */
 #toast-wrap { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 200; display: flex; flex-direction: column; gap: 8px; align-items: center; }
 .toast {
-  background: rgba(59,62,54,.92); color: #f5f3ec; padding: 9px 20px; border-radius: 99px;
+  background: rgba(74,63,92,.94); color: #fff5fb; padding: 9px 20px; border-radius: 99px;
   font-size: 13px; box-shadow: var(--shadow); animation: pop .18s ease;
 }
-.toast.warn { background: rgba(160, 88, 66, .95); }
+.toast.warn { background: rgba(226, 92, 106, .96); }
 
 /* 小屏提示 */
 #small-screen-tip {

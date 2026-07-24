@@ -2,14 +2,22 @@
 import * as THREE from 'three';
 import { PALETTE } from './data.js';
 
-// ---------- 小工具 ----------
+// ---------- 卡通着色（动漫风） ----------
+// 4 阶色阶梯度贴图，配合 MeshToonMaterial 形成赛璐璐分色
+const toonGrad = new THREE.DataTexture(new Uint8Array([110, 165, 215, 255]), 4, 1, THREE.RedFormat);
+toonGrad.minFilter = toonGrad.magFilter = THREE.NearestFilter;
+toonGrad.needsUpdate = true;
+export { toonGrad };
+
 const matCache = new Map();
-function M(hex) {
+export function M(hex) {
   if (!matCache.has(hex)) {
-    matCache.set(hex, new THREE.MeshLambertMaterial({ color: hex, flatShading: true }));
+    matCache.set(hex, new THREE.MeshToonMaterial({ color: hex, gradientMap: toonGrad }));
   }
   return matCache.get(hex);
 }
+// 描边材质：反向外壳
+const OUTLINE_MAT = new THREE.MeshBasicMaterial({ color: '#4a3f5c', side: THREE.BackSide });
 export function shade(hex, f) {
   const c = new THREE.Color(hex);
   if (f >= 0) c.lerp(new THREE.Color('#ffffff'), f); else c.lerp(new THREE.Color('#2c2a24'), -f);
@@ -38,7 +46,7 @@ function rng(seedStr) {
   return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
 }
 
-const wood = '#b59b7c', woodD = '#96805f', darkacc = '#55584f', cream = '#efe9dd';
+const wood = '#dca86e', woodD = '#b9885a', darkacc = '#5a5470', cream = '#fff6e8';
 
 function legs4(g, w, d, h, hex, r = 0.04, inset = 0.08) {
   const hw = w / 2 - inset, hd = d / 2 - inset;
@@ -318,6 +326,19 @@ export function buildFurniture(item) {
   const g = new THREE.Group();
   if (!def) return g;
   def.build(g, PALETTE[item.colorIndex % PALETTE.length], item.id);
+  // 动漫描边：为较大的部件叠加反向外壳
+  const outlines = [];
+  for (const m of g.children) {
+    if (!m.isMesh) continue;
+    if (!m.geometry.boundingSphere) m.geometry.computeBoundingSphere();
+    const r = m.geometry.boundingSphere.radius * Math.max(m.scale.x, m.scale.y, m.scale.z);
+    if (r < 0.09) continue;
+    const o = new THREE.Mesh(m.geometry, OUTLINE_MAT);
+    o.position.copy(m.position); o.rotation.copy(m.rotation);
+    o.scale.copy(m.scale).multiplyScalar(1 + Math.min(0.06, 0.012 / r));
+    outlines.push(o);
+  }
+  outlines.forEach(o => g.add(o));
   g.position.set(item.x, 0, item.z);
   g.rotation.y = item.rot;
   g.userData = { kind: 'furniture', id: item.id };

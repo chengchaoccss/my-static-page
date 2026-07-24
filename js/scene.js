@@ -4,14 +4,16 @@ import {
   GRID, WALL_H, WALL_T, FLOOR_GAP, DOOR_W_CELLS, DOOR_H,
   FLOOR_PALETTE, locusStatus,
 } from './data.js';
-import { buildFurniture, slotWorldPos, furnitureAABB, CATALOG } from './furniture.js';
+import { buildFurniture, slotWorldPos, furnitureAABB, CATALOG, toonGrad } from './furniture.js';
 
-const WALL_COLOR = '#ded7c9';
-const SLAB_EDGE = '#c9c1af';
-export const STATUS_COLORS = { empty: '#b5b9b0', filled: '#e8a13c', fuzzy: '#d9b23c', known: '#6f8f7c' };
+const WALL_COLOR = '#fff2d9';
+const SLAB_EDGE = '#e8b483';
+export const STATUS_COLORS = { empty: '#b8bcc8', filled: '#ffa22e', fuzzy: '#ffd23e', known: '#57cc8a' };
+const PATH_COLOR = '#ff9a2e';
 
-const wallMat = new THREE.MeshLambertMaterial({ color: WALL_COLOR });
-const wallGhostMat = new THREE.MeshLambertMaterial({ color: WALL_COLOR, transparent: true, opacity: 0.18, depthWrite: false });
+const wallMat = new THREE.MeshToonMaterial({ color: WALL_COLOR, gradientMap: toonGrad });
+const wallGhostMat = new THREE.MeshToonMaterial({ color: WALL_COLOR, gradientMap: toonGrad, transparent: true, opacity: 0.18, depthWrite: false });
+const wallEdgeMat = new THREE.LineBasicMaterial({ color: '#8a7ba6', transparent: true, opacity: 0.45 });
 
 // ---------- 墙体计算（网格去重 + 自动门洞） ----------
 // 返回 { solids: [{x0,x1,z0,z1,y0,y1}], doors: [...同构], boxes2d: 碰撞 AABB }
@@ -140,12 +142,12 @@ export class SceneManager {
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color('#f0ede5');
-    this.scene.fog = new THREE.Fog('#f0ede5', 55, 120);
+    this.scene.background = new THREE.Color('#aee0ff');
+    this.scene.fog = new THREE.Fog('#aee0ff', 60, 140);
 
-    const hemi = new THREE.HemisphereLight('#ffffff', '#cfc7b2', 1.05);
+    const hemi = new THREE.HemisphereLight('#ffffff', '#e8e0d0', 1.05);
     this.scene.add(hemi);
-    const sun = new THREE.DirectionalLight('#fff6e8', 1.7);
+    const sun = new THREE.DirectionalLight('#fff2d6', 1.9);
     sun.position.set(14, 24, 10);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
@@ -154,17 +156,35 @@ export class SceneManager {
     this.scene.add(sun, sun.target);
     this.sun = sun;
 
+    // 动漫草地
     const ground = new THREE.Mesh(
-      new THREE.CircleGeometry(70, 48),
-      new THREE.MeshLambertMaterial({ color: '#e4ddcb' }),
+      new THREE.CircleGeometry(80, 48),
+      new THREE.MeshToonMaterial({ color: '#93d47f', gradientMap: toonGrad }),
     );
     ground.rotation.x = -Math.PI / 2; ground.position.y = -0.09;
     ground.receiveShadow = true;
     this.scene.add(ground);
 
-    this.grid = new THREE.GridHelper(60, 120, '#c6bfae', '#d9d2c1');
-    this.grid.material.transparent = true; this.grid.material.opacity = 0.5;
+    this.grid = new THREE.GridHelper(60, 120, '#6fae62', '#82c273');
+    this.grid.material.transparent = true; this.grid.material.opacity = 0.45;
     this.scene.add(this.grid);
+
+    // 飘浮的卡通云朵
+    this.clouds = new THREE.Group();
+    const cloudMat = new THREE.MeshToonMaterial({ color: '#ffffff', gradientMap: toonGrad });
+    const seeds = [[-24, 15, -20, 1.4], [18, 18, -26, 1.9], [30, 13, 10, 1.2], [-14, 20, 24, 1.6], [4, 16, -38, 1.3]];
+    for (const [x, y, z, s] of seeds) {
+      const c = new THREE.Group();
+      [[0, 0, 0, 1.6], [1.5, 0.25, 0.2, 1.1], [-1.4, 0.15, -0.1, 1.0], [0.4, 0.7, -0.3, 0.9]].forEach(([px, py, pz, r]) => {
+        const b = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), cloudMat);
+        b.position.set(px, py, pz);
+        c.add(b);
+      });
+      c.position.set(x, y, z); c.scale.setScalar(s);
+      c.userData.speed = 0.25 + s * 0.15;
+      this.clouds.add(c);
+    }
+    this.scene.add(this.clouds);
 
     this.floorGroups = new Map();   // level -> Group
     this.furnGroups = new Map();    // furnId -> Group
@@ -197,7 +217,7 @@ export class SceneManager {
       for (const room of floor.rooms) {
         const slab = new THREE.Mesh(
           new THREE.BoxGeometry(room.w, 0.16, room.d),
-          new THREE.MeshLambertMaterial({ color: FLOOR_PALETTE[room.floorColor % FLOOR_PALETTE.length] }),
+          new THREE.MeshToonMaterial({ color: FLOOR_PALETTE[room.floorColor % FLOOR_PALETTE.length], gradientMap: toonGrad }),
         );
         slab.position.set(room.x + room.w / 2, -0.08, room.z + room.d / 2);
         slab.receiveShadow = true; slab.castShadow = true;
@@ -205,12 +225,12 @@ export class SceneManager {
         fg.add(slab);
         const edge = new THREE.Mesh(
           new THREE.BoxGeometry(room.w + 0.08, 0.05, room.d + 0.08),
-          new THREE.MeshLambertMaterial({ color: SLAB_EDGE }),
+          new THREE.MeshToonMaterial({ color: SLAB_EDGE, gradientMap: toonGrad }),
         );
         edge.position.set(room.x + room.w / 2, -0.14, room.z + room.d / 2);
         fg.add(edge);
         // 房间名标签（建造模式显示）
-        const label = makeTextSprite(room.name, { color: '#6d7166', bg: 'rgba(255,253,249,.88)' });
+        const label = makeTextSprite(room.name, { color: '#6a5f85', bg: 'rgba(255,255,255,.92)' });
         label.position.set(room.x + room.w / 2, 0.35, room.z + room.d / 2);
         label.userData.isRoomLabel = true;
         fg.add(label);
@@ -219,13 +239,18 @@ export class SceneManager {
       // 墙体
       const walls = computeWalls(floor);
       this.wallCache.set(floor.level, walls);
-      const addWall = (seg, ghostable) => {
+      const addWall = (seg) => {
         const w = seg.x1 - seg.x0, d = seg.z1 - seg.z0, h = seg.y1 - seg.y0;
-        const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
+        const geo = new THREE.BoxGeometry(w, h, d);
+        const mesh = new THREE.Mesh(geo, wallMat);
         mesh.position.set((seg.x0 + seg.x1) / 2, seg.y0 + h / 2, (seg.z0 + seg.z1) / 2);
         mesh.castShadow = true; mesh.receiveShadow = true;
         mesh.userData.isWall = true;
-        fg.add(mesh);
+        // 漫画描线
+        const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo), wallEdgeMat);
+        edges.position.copy(mesh.position);
+        edges.userData.isWallEdge = true;
+        fg.add(mesh, edges);
       };
       walls.solids.forEach(s => addWall(s));
       walls.doors.forEach(s => addWall(s));
@@ -332,7 +357,7 @@ export class SceneManager {
       const g = this.markerGroups.get(id);
       if (g) pts.push({ v: new THREE.Vector3(g.position.x, g.userData.baseY - 0.1, g.position.z), level: g.userData.level });
     }
-    const mat = new THREE.MeshBasicMaterial({ color: '#e8a13c', transparent: true, opacity: 0.75 });
+    const mat = new THREE.MeshBasicMaterial({ color: PATH_COLOR, transparent: true, opacity: 0.8 });
     let run = [];
     const flushRun = () => {
       if (run.length >= 2) {
@@ -361,6 +386,7 @@ export class SceneManager {
         const ghost = level < activeLevel;
         fg.traverse(o => {
           if (o.isMesh && o.userData.isWall) o.material = ghost ? wallGhostMat : wallMat;
+          if (o.isLine && o.userData.isWallEdge) o.visible = !ghost;
           if (o.isSprite && o.userData.isRoomLabel) o.visible = !ghost;
           if (o.isMesh) o.castShadow = !ghost;
         });
@@ -368,6 +394,7 @@ export class SceneManager {
         fg.visible = true;
         fg.traverse(o => {
           if (o.isMesh && o.userData.isWall) { o.material = wallMat; o.castShadow = true; }
+          if (o.isLine && o.userData.isWallEdge) o.visible = true;
           if (o.isSprite && o.userData.isRoomLabel) o.visible = false;
         });
       }
@@ -429,6 +456,10 @@ export class SceneManager {
       g.position.y = g.userData.baseY + Math.sin(t * 2 + g.userData.phase) * 0.05;
       g.children[0].rotation.y = t * 1.2 + g.userData.phase;
     }
+    for (const c of this.clouds.children) {
+      c.position.x += c.userData.speed * 0.016;
+      if (c.position.x > 55) c.position.x = -55;
+    }
     this.renderer.render(this.scene, camera);
   }
 
@@ -454,10 +485,12 @@ export function renderPalaceThumb(palace) {
       thumbRenderer.setSize(420, 260);
     }
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#edeadf');
-    scene.add(new THREE.HemisphereLight('#ffffff', '#cfc7b2', 1.1));
-    const sun = new THREE.DirectionalLight('#fff6e8', 1.6);
+    scene.background = new THREE.Color('#bfe6ff');
+    scene.add(new THREE.HemisphereLight('#ffffff', '#e8e0d0', 1.05));
+    const sun = new THREE.DirectionalLight('#fff2d6', 1.8);
     sun.position.set(10, 18, 8); scene.add(sun);
+    const g0 = new THREE.Mesh(new THREE.CircleGeometry(60, 32), new THREE.MeshToonMaterial({ color: '#93d47f', gradientMap: toonGrad }));
+    g0.rotation.x = -Math.PI / 2; g0.position.y = -0.1; scene.add(g0);
 
     let minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9, maxLevel = 0;
     for (const floor of palace.floors) {
@@ -469,7 +502,7 @@ export function renderPalaceThumb(palace) {
         minZ = Math.min(minZ, room.z); maxZ = Math.max(maxZ, room.z + room.d);
         const slab = new THREE.Mesh(
           new THREE.BoxGeometry(room.w, 0.16, room.d),
-          new THREE.MeshLambertMaterial({ color: FLOOR_PALETTE[room.floorColor % FLOOR_PALETTE.length] }),
+          new THREE.MeshToonMaterial({ color: FLOOR_PALETTE[room.floorColor % FLOOR_PALETTE.length], gradientMap: toonGrad }),
         );
         slab.position.set(room.x + room.w / 2, -0.08, room.z + room.d / 2);
         fg.add(slab);
