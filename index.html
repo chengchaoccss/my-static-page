@@ -1,57 +1,163 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>小艺 Claw 部署页面</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-            color: #fff;
-        }
-        .card {
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 24px;
-            padding: 48px;
-            max-width: 480px;
-            text-align: center;
-        }
-        h1 { font-size: 28px; margin-bottom: 8px; }
-        p { color: rgba(255,255,255,0.6); line-height: 1.6; }
-        .status {
-            display: inline-block;
-            margin-top: 24px;
-            padding: 8px 20px;
-            background: rgba(0, 200, 83, 0.2);
-            border: 1px solid rgba(0, 200, 83, 0.4);
-            border-radius: 100px;
-            color: #00c853;
-            font-size: 14px;
-        }
-        .time {
-            margin-top: 16px;
-            font-size: 13px;
-            color: rgba(255,255,255,0.3);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>记忆宫殿 · Memory Palace</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏛️</text></svg>">
+  <script type="importmap">{ "imports": { "three": "./js/vendor/three.module.min.js" } }</script>
 </head>
 <body>
-    <div class="card">
-        <h1>✨ 小艺 Claw</h1>
-        <p>静态页面已成功部署<br>这是通过小艺 Claw 部署上线的</p>
-        <div class="status">● 运行中</div>
-        <div class="time" id="time"></div>
+
+<!-- ============ 宫殿列表页 ============ -->
+<div id="home">
+  <div class="home-wrap">
+    <div class="home-head">
+      <div class="home-title">
+        <h1><span class="logo-mark">🏛️</span>记忆宫殿</h1>
+        <p>自由搭建你的 3D 宫殿，把知识安放在每一件家具上</p>
+      </div>
+      <div class="home-actions">
+        <button class="btn" id="btn-import">📥 导入宫殿</button>
+        <button class="btn" id="btn-sample">✨ 生成示例宫殿</button>
+        <button class="btn primary" id="btn-new">＋ 新建宫殿</button>
+      </div>
     </div>
-    <script>
-        document.getElementById('time').textContent = '部署时间: ' + new Date().toLocaleString('zh-CN', {timeZone:'Asia/Shanghai'});
-    </script>
+    <div class="palace-grid" id="palace-grid"></div>
+    <div class="storage-note">
+      <span>本地存储</span>
+      <div class="storage-bar"><i id="storage-fill"></i></div>
+      <span id="storage-text"></span>
+      <span>· 数据保存在浏览器本地，建议定期「导出」备份</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 编辑器 ============ -->
+<div id="studio" class="hidden">
+  <div id="canvas-wrap"><canvas id="gl" tabindex="0"></canvas></div>
+
+  <div id="topbar">
+    <div class="bar">
+      <button class="btn ghost" id="btn-home" title="返回宫殿列表">〈 列表</button>
+      <span id="palace-title"></span>
+      <span id="save-state"></span>
+    </div>
+    <div class="spacer"></div>
+    <div class="bar">
+      <div class="seg" id="mode-seg">
+        <button data-mode="build" class="active">🔨 建造</button>
+        <button data-mode="walk">🚶 漫游</button>
+        <button data-mode="auto">🎬 导览</button>
+        <button data-mode="quiz">🎯 自测</button>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="bar">
+      <button class="btn ghost icon" id="btn-undo" title="撤销 (Ctrl+Z)">↩︎</button>
+      <button class="btn ghost icon" id="btn-redo" title="重做 (Ctrl+Shift+Z)">↪︎</button>
+      <button class="btn ghost icon" id="btn-export" title="导出此宫殿">⤓</button>
+      <button class="btn ghost icon" id="btn-help" title="帮助">?</button>
+    </div>
+  </div>
+
+  <div id="floor-bar">
+    <div class="flabel">楼层</div>
+    <div id="floor-list"></div>
+    <button id="floor-add" title="新增一层">＋</button>
+  </div>
+
+  <div id="left-panel">
+    <div class="panel-tabs">
+      <button data-tab="tools" class="active">工具</button>
+      <button data-tab="furn">家具</button>
+      <button data-tab="path">路径</button>
+    </div>
+    <div class="panel-scroll" id="left-body"></div>
+  </div>
+
+  <div id="right-panel" class="hidden">
+    <div class="rp-head"><h3 id="rp-title">属性</h3><button class="btn ghost icon" id="rp-close">✕</button></div>
+    <div class="rp-body" id="rp-body"></div>
+  </div>
+
+  <div id="hintbar"></div>
+
+  <!-- 巡游 HUD -->
+  <div id="crosshair" class="hidden"></div>
+  <div id="quiz-progress" class="hidden"></div>
+  <div id="tour-hud" class="hidden">
+    <div id="tour-prompt" class="hidden"></div>
+    <div id="tour-controls" class="bar hidden">
+      <button class="btn ghost icon" id="seq-prev" title="上一个">⏮</button>
+      <button class="btn primary icon" id="seq-play" title="播放/暂停">⏸</button>
+      <button class="btn ghost icon" id="seq-next" title="下一个">⏭</button>
+      <select id="seq-speed" class="btn small" title="每个桩点停留时长">
+        <option value="2">快 · 2s</option>
+        <option value="4" selected>中 · 4s</option>
+        <option value="7">慢 · 7s</option>
+      </select>
+      <label class="btn small ghost" style="gap:4px"><input type="checkbox" id="seq-loop"> 循环</label>
+    </div>
+  </div>
+  <div id="tour-start-overlay" class="hidden">
+    <div class="overlay-card">
+      <h2>🚶 第一人称漫游</h2>
+      <p>走进你的宫殿，沿记忆路径回想每个桩点上的内容</p>
+      <div class="keys">
+        <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 行走</span>
+        <span>鼠标 转视角</span>
+        <span><kbd>E</kbd> 查看/上下楼</span>
+        <span><kbd>Esc</kbd> 退出</span>
+      </div>
+      <button class="btn primary" id="btn-walk-start" style="padding:10px 34px">点击开始</button>
+    </div>
+  </div>
+
+  <!-- 内容卡片 -->
+  <div id="content-card" class="hidden">
+    <div class="cc-head">
+      <span class="locus-num" id="cc-num">1</span>
+      <h3 id="cc-title"></h3>
+      <button class="btn ghost icon" id="cc-close">✕</button>
+    </div>
+    <div id="quiz-veil" class="hidden">
+      <div class="q-num" id="qv-num">1</div>
+      <p>回忆这个位置挂载的内容…</p>
+      <div style="padding:16px 0 6px"><button class="btn amber" id="qv-reveal" style="padding:10px 30px">显示答案</button></div>
+    </div>
+    <div class="cc-body" id="cc-body">
+      <img class="cc-img hidden" id="cc-img" alt="">
+      <div class="cc-text" id="cc-text"></div>
+      <div class="cc-mnemonic hidden" id="cc-mnemonic"><b>💭 夸张联想</b><span id="cc-mnemonic-text"></span></div>
+    </div>
+    <div id="quiz-grade" class="hidden">
+      <button class="btn" data-grade="known">✅ 记住了<span class="g-sub">很清晰</span></button>
+      <button class="btn" data-grade="fuzzy">🟡 模糊<span class="g-sub">想了很久</span></button>
+      <button class="btn" data-grade="forgot">❌ 忘记了<span class="g-sub">完全没印象</span></button>
+    </div>
+    <div class="cc-foot" id="cc-foot">
+      <button class="btn" id="cc-edit">编辑内容</button>
+      <button class="btn primary" id="cc-ok">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 通用模态 -->
+<div id="modal-mask" class="hidden"><div class="modal" id="modal-box"></div></div>
+<div id="toast-wrap"></div>
+<input type="file" id="file-import" accept=".json,application/json" class="hidden">
+<input type="file" id="file-image" accept="image/*" class="hidden">
+
+<div id="small-screen-tip">
+  <div>
+    <div style="font-size:44px;margin-bottom:14px">🏛️</div>
+    <h2 style="margin-bottom:8px">记忆宫殿</h2>
+    <p style="color:var(--muted)">建造 3D 宫殿需要较大的屏幕<br>请使用桌面浏览器打开本页面</p>
+  </div>
+</div>
+
+<script type="module" src="js/app.js"></script>
 </body>
 </html>
