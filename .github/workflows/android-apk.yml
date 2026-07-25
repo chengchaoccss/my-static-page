@@ -34,12 +34,12 @@ jobs:
         run: gradle assembleRelease --no-daemon
 
       - name: Rename APK
-        run: cp android/app/build/outputs/apk/release/app-release.apk 记忆宫殿-MemoryPalace.apk
+        run: cp android/app/build/outputs/apk/release/app-release.apk MemoryPalace.apk
 
       - uses: actions/upload-artifact@v4
         with:
           name: memory-palace-apk
-          path: 记忆宫殿-MemoryPalace.apk
+          path: MemoryPalace.apk
 
       - name: Publish to release
         uses: softprops/action-gh-release@v2
@@ -49,5 +49,5 @@ jobs:
           body: |
             Kotlin + Jetpack Compose 安卓客户端（内置完整 3D 记忆宫殿应用，支持触屏操作）。
             下载 APK 后在手机上安装即可（需允许安装未知来源应用）。
-          files: 记忆宫殿-MemoryPalace.apk
+          files: MemoryPalace.apk
           make_latest: true
